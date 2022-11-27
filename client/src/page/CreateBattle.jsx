@@ -6,12 +6,15 @@ import { useGlobalContext } from "../context";
 import { PageHOC, CustomButton, CustomInput, GameLoad } from "../components";
 
 const CreateBattle = () => {
-	const { contract, gameData, battleName, setBattleName } = useGlobalContext();
+	const { contract, gameData, battleName, setBattleName, setErrorMessage } =
+		useGlobalContext();
 	const [waitBattle, setWaitBattle] = useState(false);
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		if (gameData?.activeBattle?.battleStatus === 0) {
+		if (gameData?.activeBattle?.battleStatus === 1) {
+			navigate(`/battle/${gameData?.activeBattle?.name}`);
+		} else if (gameData?.activeBattle?.battleStatus === 0) {
 			setWaitBattle(true);
 		}
 	}, [gameData]);
@@ -24,7 +27,7 @@ const CreateBattle = () => {
 
 			setWaitBattle(true);
 		} catch (error) {
-			console.log(error);
+			setErrorMessage(error);
 		}
 	};
 

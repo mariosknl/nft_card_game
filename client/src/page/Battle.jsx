@@ -18,13 +18,16 @@ const Battle = () => {
 	const {
 		contract,
 		gameData,
+		battleGround,
 		walletAddress,
+		setErrorMessage,
 		showAlert,
 		setShowAlert,
-		battleGround,
+		player1Ref,
+		player2Ref,
 	} = useGlobalContext();
-	const [player1, setPlayer1] = useState({});
 	const [player2, setPlayer2] = useState({});
+	const [player1, setPlayer1] = useState({});
 	const { battleName } = useParams();
 	const navigate = useNavigate();
 
@@ -50,7 +53,7 @@ const Battle = () => {
 				const player02 = await contract.getPlayer(player02Address);
 
 				const p1Att = p1TokenData.attackStrength.toNumber();
-				const p1Def = p1TokenData.defenceStrength.toNumber();
+				const p1Def = p1TokenData.defenseStrength.toNumber();
 				const p1H = player01.playerHealth.toNumber();
 				const p1M = player01.playerMana.toNumber();
 				const p2H = player02.playerHealth.toNumber();
@@ -65,12 +68,36 @@ const Battle = () => {
 				});
 				setPlayer2({ ...player02, att: "X", def: "X", health: p2H, mana: p2M });
 			} catch (error) {
-				console.log(error);
+				setErrorMessage(error);
 			}
 		};
 
 		if (contract && gameData.activeBattle) getPlayerInfo();
 	}, [contract, gameData, battleName]);
+
+	const makeAMove = async (choice) => {
+		playAudio(choice === 1 ? attackSound : defenseSound);
+
+		try {
+			await contract.attackOrDefendChoice(choice, battleName);
+
+			setShowAlert({
+				status: true,
+				tupe: "info",
+				message: `Initiating ${choice === 1 ? "attack" : "defense"}...`,
+			});
+		} catch (error) {
+			setErrorMessage(error);
+		}
+	};
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			if (!gameData?.activeBattle) navigate("/");
+		}, [2000]);
+
+		return () => clearTimeout(timer);
+	}, []);
 
 	return (
 		<div
@@ -83,24 +110,29 @@ const Battle = () => {
 			<PlayerInfo player={player2} playerIcon={player02Icon} mt />
 
 			<div className={`${styles.flexCenter} flex-col my-10`}>
-				<Card card={player2} title={player2.playerName} cardRef="" playerTwo />
+				<Card
+					card={player2}
+					title={player2.playerName}
+					cardRef={player2Ref}
+					playerTwo
+				/>
 
 				<div className="flex items-center flex-row">
 					<ActionButton
 						imgUrl={attack}
-						handleClick={() => {}}
+						handleClick={() => makeAMove(1)}
 						restStyles="mr-2 hover:border-yellow-400"
 					/>
 
 					<Card
 						card={player1}
 						title={player1.playerName}
-						cardRef=""
+						cardRef={player1Ref}
 						restStyles="mt-3"
 					/>
 					<ActionButton
 						imgUrl={attack}
-						handleClick={() => {}}
+						handleClick={() => makeAMove(2)}
 						restStyles="ml-6 hover:border-red-600"
 					/>
 				</div>
